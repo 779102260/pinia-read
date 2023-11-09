@@ -201,6 +201,16 @@ function createOptionsStore<
   return store as any
 }
 
+/**
+ * 创建一个setup store
+ * @param $id store名称
+ * @param setup setup函数
+ * @param options 配置
+ * @param pinia pinia实例
+ * @param hot
+ * @param isOptionsStore
+ * @returns
+ */
 function createSetupStore<
   Id extends string,
   SS extends Record<any, unknown>,
@@ -225,11 +235,13 @@ function createSetupStore<
   )
 
   /* istanbul ignore if */
+  // pinia实例已销毁
   if (__DEV__ && !pinia._e.active) {
     throw new Error('Pinia destroyed')
   }
 
   // watcher options for $subscribe
+  // $subscribe的配置项，它给基于watcher实现，所以配置项是watcher的配置
   const $subscribeOptions: WatchOptions = {
     deep: true,
     // flush: 'post',
@@ -261,6 +273,7 @@ function createSetupStore<
   let subscriptions: SubscriptionCallback<S>[] = []
   let actionSubscriptions: StoreOnActionListener<Id, S, G, A>[] = []
   let debuggerEvents: DebuggerEvent[] | DebuggerEvent
+  // state初始值
   const initialState = pinia.state.value[$id] as UnwrapRef<S> | undefined
 
   // avoid setting the state for option stores if it is set
@@ -268,6 +281,7 @@ function createSetupStore<
   if (!isOptionsStore && !initialState && (!__DEV__ || !hot)) {
     /* istanbul ignore if */
     if (isVue2) {
+      // pinia.state结构这样：{storem名称: {}}
       set(pinia.state.value, $id, {})
     } else {
       pinia.state.value[$id] = {}
@@ -895,12 +909,17 @@ export function defineStore(
   }
 
   function useStore(pinia?: Pinia | null, hot?: StoreGeneric): StoreGeneric {
+    // 获取已激活的pinia实例
+    // TODO hasInjectionContext 跟下代码
     const hasContext = hasInjectionContext()
     pinia =
       // in test mode, ignore the argument provided as we can always retrieve a
       // pinia instance with getActivePinia()
       (__TEST__ && activePinia && activePinia._testing ? null : pinia) ||
+      // inject注入整个应用 (通过 app.provide()) 提供的值，他是在app.use(pinia)时注入的
       (hasContext ? inject(piniaSymbol, null) : null)
+
+    // 设置当前激活的pinia实例
     if (pinia) setActivePinia(pinia)
 
     if (__DEV__ && !activePinia) {
@@ -913,8 +932,10 @@ export function defineStore(
 
     pinia = activePinia!
 
+    // 如果store未创建，创建一个
     if (!pinia._s.has(id)) {
       // creating the store registers it in `pinia._s`
+      // 创建store注册到pinia._s中
       if (isSetupStore) {
         createSetupStore(id, setup, options, pinia)
       } else {
@@ -928,6 +949,7 @@ export function defineStore(
       }
     }
 
+    // 获取已创建的store
     const store: StoreGeneric = pinia._s.get(id)!
 
     if (__DEV__ && hot) {
@@ -959,6 +981,7 @@ export function defineStore(
     }
 
     // StoreGeneric cannot be casted towards Store
+    // 不能将 StoreGeneric 类型强制转换为 Store
     return store as any
   }
 
