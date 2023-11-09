@@ -281,7 +281,7 @@ function createSetupStore<
   if (!isOptionsStore && !initialState && (!__DEV__ || !hot)) {
     /* istanbul ignore if */
     if (isVue2) {
-      // pinia.state结构这样：{storem名称: {}}
+      // pinia.state结构这样：{store名称: {}}
       set(pinia.state.value, $id, {})
     } else {
       pinia.state.value[$id] = {}
@@ -485,8 +485,7 @@ function createSetupStore<
       : partialStore
   ) as unknown as Store<Id, S, G, A>
 
-  // store the partial store now so the setup of stores can instantiate each other before they are finished without
-  // creating infinite loops.
+  // store the partial store now so the setup of stores can instantiate each other before they are finished without creating infinite loops.
   pinia._s.set($id, store as Store)
 
   const runWithContext =
