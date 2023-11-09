@@ -861,7 +861,9 @@ export function defineStore(
   setup?: any,
   setupOptions?: any
 ): StoreDefinition {
+  // store唯一id
   let id: string
+  // store配置
   let options:
     | DefineStoreOptions<
         string,
